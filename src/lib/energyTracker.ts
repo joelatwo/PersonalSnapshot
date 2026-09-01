@@ -186,15 +186,20 @@ export function getAverageForField(
   entries: EnergyEntry[],
   field: EnergyFieldKey,
 ): number {
-  if (entries.length === 0) {
+  const sortedEntries = [...entries].sort((a, b) =>
+    a.date.localeCompare(b.date),
+  );
+  const recentEntries = sortedEntries.slice(-3);
+
+  if (recentEntries.length === 0) {
     return 0;
   }
 
-  const total = entries.reduce(
+  const total = recentEntries.reduce(
     (sum, entry) => sum + clampNumber(entry[field]),
     0,
   );
-  return Number((total / entries.length).toFixed(1));
+  return Number((total / recentEntries.length).toFixed(1));
 }
 
 function clampNumber(value: number): number {

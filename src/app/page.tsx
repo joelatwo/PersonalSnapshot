@@ -9,13 +9,12 @@ import {
   CardContent,
   Chip,
   IconButton,
-  TextField,
   Typography,
 } from "@mui/material";
 import { ArrowBack, ArrowForward, Save } from "@mui/icons-material";
-import { TrackerSlider } from "@/components/TrackerSlider";
 import { SummaryCard } from "@/components/SummaryCard";
 import { TrendChart } from "@/components/TrendChart";
+import { EnergyFieldGrid } from "@/components/EnergyFieldGrid";
 import {
   ENERGY_FIELDS,
   type EnergyEntry,
@@ -33,21 +32,18 @@ import {
 
 export default function HomePage() {
   const today = useMemo(() => new Date(), []);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    formatDateKey(today),
-  );
-  const [entries, setEntries] = useState<EnergyEntry[]>([]);
+  const todayKey = formatDateKey(today);
+  const [selectedDate, setSelectedDate] = useState<string>(todayKey);
+  const [entries, setEntries] = useState<EnergyEntry[]>(() => readStoredEntries());
   const [draft, setDraft] = useState<EnergyEntry>(() =>
     getEmptyEntry(formatDateKey(today)),
   );
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = readStoredEntries();
-    setEntries(stored);
-    const existing = getEntryByDate(stored, selectedDate);
+    const existing = getEntryByDate(entries, selectedDate);
     setDraft(existing ?? getEmptyEntry(selectedDate));
-  }, [selectedDate]);
+  }, [entries, selectedDate]);
 
   useEffect(() => {
     saveStoredEntries(entries);
@@ -109,6 +105,124 @@ export default function HomePage() {
             <Typography variant="body2" sx={{ color: "#475569" }}>
               One quick check-in per day, stored locally for the last 30 days.
             </Typography>
+          </Box>
+
+          {selectedDate === todayKey && !getEntryByDate(entries, todayKey) ? (
+            <Card
+              sx={{
+                borderRadius: 4,
+                boxShadow: "0 16px 40px rgba(15, 23, 42, 0.08)",
+                border: "1px solid rgba(99, 102, 241, 0.12)",
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: 800, color: "#0f172a" }}
+                    >
+                      Today
+                    </Typography>
+                    <Chip
+                      label="Quick check-in"
+                      size="small"
+                      sx={{
+                        borderRadius: 999,
+                        backgroundColor: "rgba(99,102,241,0.1)",
+                        color: "#4338ca",
+                        fontWeight: 700,
+                      }}
+                    />
+                  </Box>
+
+                  <EnergyFieldGrid
+                    values={draft}
+                    onChange={changeField}
+                    onCommentChange={(comment) =>
+                      setDraft((previous) => ({ ...previous, comment }))
+                    }
+                  />
+
+                  <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<Save />}
+                      onClick={handleSave}
+                      sx={{
+                        borderRadius: 999,
+                        px: 2.5,
+                        py: 1,
+                        background: "linear-gradient(135deg, #111827, #475569)",
+                        textTransform: "none",
+                      }}
+                    >
+                      Save today
+                    </Button>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, minmax(0, 1fr))",
+                md: "repeat(3, minmax(0, 1fr))",
+              },
+              gap: 2,
+            }}
+          >
+            {stats.map((field) => (
+              <Box key={field.key}>
+                <Card
+                  sx={{
+                    borderRadius: 4,
+                    p: 1,
+                    boxShadow: "0 12px 28px rgba(15, 23, 42, 0.06)",
+                  }}
+                >
+                  <CardContent>
+                    <TrendChart
+                      title={field.label}
+                      values={field.series}
+                      color={field.color}
+                    />
+                  </CardContent>
+                </Card>
+              </Box>
+            ))}
+          </Box>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "repeat(2, minmax(0, 1fr))",
+                sm: "repeat(4, minmax(0, 1fr))",
+              },
+              gap: 2,
+            }}
+          >
+            {stats.map((field) => (
+              <Box key={field.key}>
+                <SummaryCard
+                  label={field.label}
+                  value={field.average}
+                  accent={field.color}
+                />
+              </Box>
+            ))}
           </Box>
 
           <Card
@@ -193,43 +307,12 @@ export default function HomePage() {
                   })}
                 </Box>
 
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: {
-                      xs: "1fr",
-                      sm: "repeat(2, minmax(0, 1fr))",
-                    },
-                    gap: 2,
-                  }}
-                >
-                  {ENERGY_FIELDS.map((field) => (
-                    <Box key={field.key}>
-                      <TrackerSlider
-                        label={field.label}
-                        value={draft[field.key]}
-                        color={field.color}
-                        onChange={(value) => changeField(field.key, value)}
-                      />
-                    </Box>
-                  ))}
-                </Box>
-
-                <TextField
-                  label="Comment (optional)"
-                  value={draft.comment}
-                  onChange={(event) =>
-                    setDraft((previous) => ({
-                      ...previous,
-                      comment: event.target.value,
-                    }))
+                <EnergyFieldGrid
+                  values={draft}
+                  onChange={changeField}
+                  onCommentChange={(comment) =>
+                    setDraft((previous) => ({ ...previous, comment }))
                   }
-                  multiline
-                  maxRows={2}
-                  placeholder="One line of context..."
-                  fullWidth
-                  slotProps={{ htmlInput: { maxLength: 160 } }}
-                  sx={{ mt: 1 }}
                 />
 
                 <Box
@@ -268,59 +351,6 @@ export default function HomePage() {
               </Box>
             </CardContent>
           </Card>
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "repeat(2, minmax(0, 1fr))",
-                sm: "repeat(4, minmax(0, 1fr))",
-              },
-              gap: 2,
-            }}
-          >
-            {stats.map((field) => (
-              <Box key={field.key}>
-                <SummaryCard
-                  label={field.label}
-                  value={field.average}
-                  accent={field.color}
-                />
-              </Box>
-            ))}
-          </Box>
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, minmax(0, 1fr))",
-                md: "repeat(3, minmax(0, 1fr))",
-              },
-              gap: 2,
-            }}
-          >
-            {stats.map((field) => (
-              <Box key={field.key}>
-                <Card
-                  sx={{
-                    borderRadius: 4,
-                    p: 1,
-                    boxShadow: "0 12px 28px rgba(15, 23, 42, 0.06)",
-                  }}
-                >
-                  <CardContent>
-                    <TrendChart
-                      title={field.label}
-                      values={field.series}
-                      color={field.color}
-                    />
-                  </CardContent>
-                </Card>
-              </Box>
-            ))}
-          </Box>
         </Box>
       </Box>
     </Box>
