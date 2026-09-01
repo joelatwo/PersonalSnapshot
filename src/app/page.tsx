@@ -34,7 +34,9 @@ export default function HomePage() {
   const today = useMemo(() => new Date(), []);
   const todayKey = formatDateKey(today);
   const [selectedDate, setSelectedDate] = useState<string>(todayKey);
-  const [entries, setEntries] = useState<EnergyEntry[]>(() => readStoredEntries());
+  const [entries, setEntries] = useState<EnergyEntry[]>(() =>
+    readStoredEntries(),
+  );
   const [draft, setDraft] = useState<EnergyEntry>(() =>
     getEmptyEntry(formatDateKey(today)),
   );
