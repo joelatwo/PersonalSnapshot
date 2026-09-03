@@ -7,7 +7,7 @@ export default defineConfig({
   // and hosting path (works for GitHub Pages). Using './' avoids absolute
   // paths like '/personalsnapshot/' which can cause 404s if the repo's URL
   // path casing differs from the configured base.
-  base: './',
+  base: "./",
   plugins: [react()],
   resolve: {
     alias: {
