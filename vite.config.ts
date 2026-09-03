@@ -3,7 +3,11 @@ import react from "@vitejs/plugin-react";
 import path from "node:path";
 
 export default defineConfig({
-  base: "/personalsnapshot/",
+  // Use a relative base so the built site works regardless of repo name casing
+  // and hosting path (works for GitHub Pages). Using './' avoids absolute
+  // paths like '/personalsnapshot/' which can cause 404s if the repo's URL
+  // path casing differs from the configured base.
+  base: './',
   plugins: [react()],
   resolve: {
     alias: {
