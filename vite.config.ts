@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "staticSite",
+    outDir: "docs",
     emptyOutDir: true,
   },
   server: {

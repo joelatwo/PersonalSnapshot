@@ -6,7 +6,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "build:pages": "vite build",
-    "build:staticSite": "vite build",
+    "build:site": "vite build",
     "preview": "vite preview --host",
     "lint": "eslint . --ext .ts,.tsx"
   },
