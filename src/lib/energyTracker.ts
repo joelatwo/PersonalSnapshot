@@ -38,6 +38,19 @@ export function formatDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function parseDateKey(dateKey: string): Date {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function differenceInCalendarDays(left: Date, right: Date): number {
+  const leftStart = new Date(left.getFullYear(), left.getMonth(), left.getDate());
+  const rightStart = new Date(right.getFullYear(), right.getMonth(), right.getDate());
+  return Math.round(
+    (leftStart.getTime() - rightStart.getTime()) / (1000 * 60 * 60 * 24),
+  );
+}
+
 export function normalizeEntry(
   entry: Partial<EnergyEntry> & { date?: string },
 ): EnergyEntry {
@@ -126,20 +139,24 @@ export function saveStoredEntries(entries: EnergyEntry[]): void {
 }
 
 export function isWithinLastMonth(dateKey: string): boolean {
-  const providedDate = new Date(`${dateKey}T12:00:00`);
+  const targetDate = parseDateKey(dateKey);
   const now = new Date();
-  const monthAgo = new Date(now);
-  monthAgo.setDate(now.getDate() - 30);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  return providedDate >= monthAgo && providedDate <= now;
+  if (Number.isNaN(targetDate.getTime())) {
+    return false;
+  }
+
+  const dayOffset = differenceInCalendarDays(today, targetDate);
+  return dayOffset >= 0 && dayOffset <= 29;
 }
 
 export function getLastMonthDates(): string[] {
   const today = new Date();
   const values: string[] = [];
 
-  for (let index = 30; index >= 0; index -= 1) {
-    const pointer = new Date(today);
+  for (let index = 29; index >= 0; index -= 1) {
+    const pointer = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     pointer.setDate(today.getDate() - index);
     values.push(formatDateKey(pointer));
   }
@@ -151,18 +168,16 @@ export function getTrendSeriesForField(
   entries: EnergyEntry[],
   field: EnergyFieldKey,
 ): Array<{ date: string; value: number }> {
-  const sortedEntries = [...entries].sort((a, b) =>
-    a.date.localeCompare(b.date),
-  );
+  const sortedEntries = [...entries]
+    .filter((entry) => isWithinLastMonth(entry.date))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   if (sortedEntries.length === 0) {
     return [];
   }
 
-  const firstDate = new Date(`${sortedEntries[0].date}T12:00:00`);
-  const lastDate = new Date(
-    `${sortedEntries[sortedEntries.length - 1].date}T12:00:00`,
-  );
+  const firstDate = parseDateKey(sortedEntries[0].date);
+  const lastDate = parseDateKey(sortedEntries[sortedEntries.length - 1].date);
   const byDate = new Map(
     sortedEntries.map((entry) => [entry.date, clampNumber(entry[field])]),
   );
