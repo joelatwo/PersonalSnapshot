@@ -44,8 +44,16 @@ function parseDateKey(dateKey: string): Date {
 }
 
 function differenceInCalendarDays(left: Date, right: Date): number {
-  const leftStart = new Date(left.getFullYear(), left.getMonth(), left.getDate());
-  const rightStart = new Date(right.getFullYear(), right.getMonth(), right.getDate());
+  const leftStart = new Date(
+    left.getFullYear(),
+    left.getMonth(),
+    left.getDate(),
+  );
+  const rightStart = new Date(
+    right.getFullYear(),
+    right.getMonth(),
+    right.getDate(),
+  );
   return Math.round(
     (leftStart.getTime() - rightStart.getTime()) / (1000 * 60 * 60 * 24),
   );
@@ -156,7 +164,11 @@ export function getLastMonthDates(): string[] {
   const values: string[] = [];
 
   for (let index = 29; index >= 0; index -= 1) {
-    const pointer = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const pointer = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
     pointer.setDate(today.getDate() - index);
     values.push(formatDateKey(pointer));
   }
